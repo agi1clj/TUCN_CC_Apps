@@ -10,7 +10,7 @@ This repo explains how to configure **AWS Cognito** for:
 
 No Lambda triggers are required. The attribute `custom:device_id` is included automatically in ID tokens.
 
-![](images/0-authorization-flows.png "Authorization Flows")
+![](images/0-p3-overview.png "Authorization Flows")
 
 
 ## 0. Prerequisites
