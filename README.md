@@ -82,7 +82,7 @@ cp frontend/.env.example frontend/.env
 7. Run frontend + backend locally with Docker Compose:
 
 ```bash
-docker compose up --build
+docker compose --env-file frontend/.env up --build -d
 ```
 
 8. Open:
@@ -197,6 +197,7 @@ https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/jwks.json
 - Backend runs on Azure Functions container port `80`, mapped to host `3001`.
 - Frontend runs on Nginx container port `80`, mapped to host `3000`.
 - On Apple Silicon, backend image is forced to `linux/amd64` via `docker-compose.yml`.
+- Frontend `REACT_APP_*` values are injected at image build time via `build.args`; run Compose with `--env-file frontend/.env` (or set env vars in your shell/CI).
 
 ## Production safety notes
 
@@ -210,7 +211,7 @@ https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/jwks.json
 
 1. Confirm Cognito config and callback/logout URLs are correct.
 2. Confirm `backend/.env` and `frontend/.env` are correct locally.
-3. Run `docker compose up --build` and validate frontend + backend flows.
+3. Run `docker compose --env-file frontend/.env up --build -d` and validate frontend + backend flows.
 4. Verify no `.env` files are tracked by git.
 5. Commit and push to `main`.
 6. Verify workflow `Publish Docker Images` succeeded.

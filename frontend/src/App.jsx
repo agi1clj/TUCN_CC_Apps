@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { API_BASE, COGNITO_DOMAIN, LOGOUT_URI, OIDC_CONFIG } from "./config";
+import "./App.css";
 
 function App() {
   const auth = useAuth();
@@ -10,6 +11,8 @@ function App() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState(null);
+  const [showToken, setShowToken] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const idToken = auth.user?.id_token;
 
@@ -64,73 +67,124 @@ function App() {
       `&logout_uri=${encodeURIComponent(logoutUri)}`;
   };
 
+  const copyToken = async () => {
+    if (!idToken) return;
+    try {
+      await navigator.clipboard.writeText(idToken);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch (copyError) {
+      setError("Unable to copy token to clipboard.");
+    }
+  };
+
   if (auth.isLoading) {
-    return <div style={{ padding: 20 }}>Loading authentication...</div>;
+    return (
+      <div className="app-shell">
+        <div className="status-panel">Loading authentication...</div>
+      </div>
+    );
   }
 
   if (auth.error) {
     return (
-      <div style={{ padding: 20, color: "red" }}>Encountering error... {auth.error.message}</div>
+      <div className="app-shell">
+        <div className="status-panel status-panel-error">
+          Encountering error... {auth.error.message}
+        </div>
+      </div>
     );
   }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial", maxWidth: "900px" }}>
-      <h1>Cognito + Azure Functions Demo (react-oidc-context)</h1>
+    <div className="app-shell">
+      <div className="bg-orb bg-orb-left" />
+      <div className="bg-orb bg-orb-right" />
+      <main className="app">
+        <header className="hero">
+          <p className="hero-kicker">Identity + Serverless</p>
+          <h1>Cloud Computing App</h1>
+          <p className="hero-subtitle">
+            Secure frontend with Amazon Cognito authentication and Azure Functions APIs.
+          </p>
+        </header>
 
-      {error && (
-        <div style={{ color: "red", marginBottom: "10px" }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      <div style={{ marginBottom: "20px" }}>
-        {auth.isAuthenticated ? (
-          <>
-            <p>
-              <strong>Status:</strong> Logged in as{" "}
-              {auth.user?.profile?.email || "(no email claim)"}
-            </p>
-            <button onClick={signOutRedirect}>Sign out</button>
-          </>
-        ) : (
-          <>
-            <p>
-              <strong>Status:</strong> Not logged in
-            </p>
-            <button onClick={() => auth.signinRedirect()}>Sign in</button>
-          </>
+        {error && (
+          <div className="alert">
+            <strong>Error:</strong> {error}
+          </div>
         )}
-      </div>
 
-      {auth.isAuthenticated && (
-        <>
-          <h2>Tokens</h2>
-          <pre style={{ background: "#eee", padding: "10px" }}>ID Token: {auth.user?.id_token}</pre>
-
-          <h2>/api/profile response</h2>
-          {loadingProfile ? (
-            <p>Loading profile...</p>
-          ) : profile ? (
-            <pre style={{ background: "#eee", padding: "10px" }}>
-              {JSON.stringify(profile, null, 2)}
-            </pre>
+        <section className="card status-card">
+          {auth.isAuthenticated ? (
+            <>
+              <p className="status-line">
+                <span className="status-dot status-dot-online" />
+                Logged in as <strong>{auth.user?.profile?.email || "(no email claim)"}</strong>
+              </p>
+              <button className="btn btn-secondary" onClick={signOutRedirect}>
+                Sign out
+              </button>
+            </>
           ) : (
-            <p>No profile loaded yet.</p>
+            <>
+              <p className="status-line">
+                <span className="status-dot" />
+                Not logged in
+              </p>
+              <button className="btn" onClick={() => auth.signinRedirect()}>
+                Sign in
+              </button>
+            </>
           )}
+        </section>
 
-          <h2>/api/data response</h2>
-          {loadingData ? (
-            <p>Loading data...</p>
-          ) : dataResponse ? (
-            <pre style={{ background: "#eee", padding: "10px" }}>
-              {JSON.stringify(dataResponse, null, 2)}
-            </pre>
-          ) : (
-            <p>No data loaded yet.</p>
-          )}
-        </>
-      )}
+        {auth.isAuthenticated && (
+          <div className="grid">
+            <section className="card">
+              <div className="section-head">
+                <h2>Authentication Token</h2>
+                <div className="actions">
+                  <button
+                    className="btn btn-small btn-ghost"
+                    onClick={() => setShowToken((current) => !current)}
+                  >
+                    {showToken ? "Hide" : "Show"}
+                  </button>
+                  <button className="btn btn-small btn-ghost" onClick={copyToken}>
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+              </div>
+              <pre className="code-block">
+                ID Token: {showToken ? auth.user?.id_token : "••••••••••••••••••••"}
+              </pre>
+            </section>
+
+            <section className="card">
+              <h2>User Profile API Response</h2>
+              {loadingProfile ? (
+                <p className="muted">Loading profile...</p>
+              ) : profile ? (
+                <pre className="code-block">{JSON.stringify(profile, null, 2)}</pre>
+              ) : (
+                <p className="muted">No profile loaded yet.</p>
+              )}
+            </section>
+
+            <section className="card card-wide">
+              <h2>Data API Response</h2>
+              {loadingData ? (
+                <p className="muted">Loading data...</p>
+              ) : dataResponse ? (
+                <pre className="code-block">{JSON.stringify(dataResponse, null, 2)}</pre>
+              ) : (
+                <p className="muted">No data loaded yet.</p>
+              )}
+            </section>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
